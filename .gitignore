@@ -1,0 +1,8 @@
+# macOS
+.DS_Store
+
+# Garmin build output
+tram-watchface/tramface/bin/
+
+# Developer signing key — never commit
+tram-watchface/tramface/developer_key

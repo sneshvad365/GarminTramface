@@ -1,0 +1,31 @@
+<strings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
+    <string id="AppName">tramface</string>
+
+    <!-- Settings titles -->
+    <string id="Stop1Title">Stop 1</string>
+    <string id="Dir1Title">Direction 1</string>
+    <string id="Stop2Title">Stop 2</string>
+    <string id="Dir2Title">Direction 2</string>
+
+    <!-- Stop names -->
+    <string id="StopPlaceDeMetz">Place de Metz</string>
+    <string id="StopLuxGare">Lux Gare Centrale</string>
+    <string id="StopScillas">Howald, Scillas</string>
+    <string id="StopBertrangeGare">Bertrange, Gare</string>
+    <string id="StopMetzGare">Metz-Ville, Gare</string>
+    <string id="StopNone">-- None --</string>
+
+    <!-- Direction options -->
+    <string id="DirAll">All directions</string>
+    <string id="DirLuxexpo">Luxexpo</string>
+    <string id="DirGareCentrale">Gare Centrale</string>
+    <string id="DirWasserbillig">Wasserbillig</string>
+    <string id="DirTroisvierges">Troisvierges</string>
+    <string id="DirDiekirch">Diekirch</string>
+    <string id="DirRodange">Rodange</string>
+    <string id="DirBettembourg">Bettembourg</string>
+    <string id="DirMetz">Metz</string>
+    <string id="DirArlon">Arlon</string>
+    <string id="DirAthus">Athus</string>
+    <string id="DirKleinbettingen">Kleinbettingen</string>
+</strings>

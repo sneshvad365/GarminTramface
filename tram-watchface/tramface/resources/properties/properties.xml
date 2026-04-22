@@ -1,0 +1,6 @@
+<properties xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
+    <property id="stop1_idx" type="number">3</property>  <!-- Bertrange, Gare -->
+    <property id="dir1_idx"  type="number">2</property>  <!-- -> Gare Centrale -->
+    <property id="stop2_idx" type="number">1</property>  <!-- Luxembourg, Gare Centrale -->
+    <property id="dir2_idx"  type="number">0</property>  <!-- All directions -->
+</properties>

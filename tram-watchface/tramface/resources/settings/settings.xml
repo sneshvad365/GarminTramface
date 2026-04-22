@@ -1,0 +1,59 @@
+<settings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
+
+    <setting propertyKey="@Properties.stop1_idx" title="@Strings.Stop1Title">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.StopPlaceDeMetz</listEntry>
+            <listEntry value="1">@Strings.StopLuxGare</listEntry>
+            <listEntry value="2">@Strings.StopScillas</listEntry>
+            <listEntry value="3">@Strings.StopBertrangeGare</listEntry>
+            <listEntry value="4">@Strings.StopMetzGare</listEntry>
+            <listEntry value="5">@Strings.StopNone</listEntry>
+        </settingConfig>
+    </setting>
+
+    <setting propertyKey="@Properties.dir1_idx" title="@Strings.Dir1Title">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.DirAll</listEntry>
+            <listEntry value="1">@Strings.DirLuxexpo</listEntry>
+            <listEntry value="2">@Strings.DirGareCentrale</listEntry>
+            <listEntry value="3">@Strings.DirWasserbillig</listEntry>
+            <listEntry value="4">@Strings.DirTroisvierges</listEntry>
+            <listEntry value="5">@Strings.DirDiekirch</listEntry>
+            <listEntry value="6">@Strings.DirRodange</listEntry>
+            <listEntry value="7">@Strings.DirBettembourg</listEntry>
+            <listEntry value="8">@Strings.DirMetz</listEntry>
+            <listEntry value="9">@Strings.DirArlon</listEntry>
+            <listEntry value="10">@Strings.DirAthus</listEntry>
+            <listEntry value="11">@Strings.DirKleinbettingen</listEntry>
+        </settingConfig>
+    </setting>
+
+    <setting propertyKey="@Properties.stop2_idx" title="@Strings.Stop2Title">
+        <settingConfig type="list">
+            <listEntry value="5">@Strings.StopNone</listEntry>
+            <listEntry value="0">@Strings.StopPlaceDeMetz</listEntry>
+            <listEntry value="1">@Strings.StopLuxGare</listEntry>
+            <listEntry value="2">@Strings.StopScillas</listEntry>
+            <listEntry value="3">@Strings.StopBertrangeGare</listEntry>
+            <listEntry value="4">@Strings.StopMetzGare</listEntry>
+        </settingConfig>
+    </setting>
+
+    <setting propertyKey="@Properties.dir2_idx" title="@Strings.Dir2Title">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.DirAll</listEntry>
+            <listEntry value="1">@Strings.DirLuxexpo</listEntry>
+            <listEntry value="2">@Strings.DirGareCentrale</listEntry>
+            <listEntry value="3">@Strings.DirWasserbillig</listEntry>
+            <listEntry value="4">@Strings.DirTroisvierges</listEntry>
+            <listEntry value="5">@Strings.DirDiekirch</listEntry>
+            <listEntry value="6">@Strings.DirRodange</listEntry>
+            <listEntry value="7">@Strings.DirBettembourg</listEntry>
+            <listEntry value="8">@Strings.DirMetz</listEntry>
+            <listEntry value="9">@Strings.DirArlon</listEntry>
+            <listEntry value="10">@Strings.DirAthus</listEntry>
+            <listEntry value="11">@Strings.DirKleinbettingen</listEntry>
+        </settingConfig>
+    </setting>
+
+</settings>
