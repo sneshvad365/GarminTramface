@@ -1,3 +1,4 @@
+import Toybox.Attention;
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.System;
@@ -15,7 +16,7 @@ class tramfaceView extends WatchUi.View {
     private const AMB   = 0xF59E0B;
     private const RED   = 0xEF4444;
 
-    private const NUM_PAGES = 4;
+    private const NUM_PAGES = 5;
 
     function initialize() {
         View.initialize();
@@ -25,11 +26,14 @@ class tramfaceView extends WatchUi.View {
     }
 
     function onShow() as Void {
-        TramData.currentPage = getPageForTime();
+        TramData.defaultPage     = getPageForTime();
+        TramData.currentPage     = TramData.defaultPage;
+        TramData.vibrateOnDelays = true;
         getApp().fetchDepartures();
     }
 
     function onHide() as Void {
+        TramData.vibrateOnDelays = false;
     }
 
 
@@ -130,6 +134,18 @@ class tramfaceView extends WatchUi.View {
         var yUpd   = (h * 0.96).toNumber();
         var pad    = (w * 0.14).toNumber();
 
+        // ── Logo (two small badges: orange tram | blue train) ────────────
+        var logoY  = (h * 0.05).toNumber();
+        var bh     = 10;
+        var bw     = 22;
+        var gap    = 4;
+        var lx     = cx - bw - gap / 2;
+        var rx     = cx + gap / 2;
+        dc.setColor(TRAM, Graphics.COLOR_TRANSPARENT);
+        dc.fillRoundedRectangle(lx, logoY - bh / 2, bw, bh, 3);
+        dc.setColor(TRAIN, Graphics.COLOR_TRANSPARENT);
+        dc.fillRoundedRectangle(rx, logoY - bh / 2, bw, bh, 3);
+
         // ── Time ─────────────────────────────────────────────────────────
         var timeStr = Lang.format("$1$:$2$", [clk.hour, clk.min.format("%02d")]);
         dc.setColor(FG, Graphics.COLOR_TRANSPARENT);
@@ -186,7 +202,7 @@ class tramfaceView extends WatchUi.View {
 
 class TramDelegate extends WatchUi.BehaviorDelegate {
 
-    private const NUM_PAGES = 4;
+    private const NUM_PAGES = 5;
 
     function initialize() {
         BehaviorDelegate.initialize();

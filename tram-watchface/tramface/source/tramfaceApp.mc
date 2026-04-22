@@ -1,4 +1,5 @@
 import Toybox.Application;
+import Toybox.Attention;
 import Toybox.Communications;
 import Toybox.Lang;
 import Toybox.System;
@@ -10,16 +11,17 @@ const GATE_URL = "https://cdt.hafas.de/gate";
 
 // Pages (fixed order):
 //   0 — Bertrange Gare  → Gare Centrale   (shows first trains after 06:40)
-//   1 — Place de Metz   → Scillas         (toward Gasperich)
-//   2 — Scillas         → Place de Metz   (toward Findel / city)
-//   3 — Lux Gare        → Bertrange       (all westbound)
+//   1 — Lux Gare        → Bertrange       (all westbound)
+//   2 — Place de Metz   → Scillas         (toward Gasperich)
+//   3 — Scillas         → Place de Metz   (toward Findel / city)
+//   4 — Place de Metz   → Lux Gare        (never default)
 
 function getPageForTime() as Lang.Number {
     var h = System.getClockTime().hour;
     if (h >= 20 || h < 8)  { return 0; }
-    if (h < 12)             { return 1; }
-    if (h < 14)             { return 2; }
-    return 3;
+    if (h < 12)             { return 2; }
+    if (h < 14)             { return 3; }
+    return 1;
 }
 
 function getSlotDef(page as Lang.Number) as Lang.Dictionary {
@@ -49,21 +51,28 @@ function getSlotDef(page as Lang.Number) as Lang.Dictionary {
                  "title" => "Bertrange -> L.Gare" };
     }
     if (page == 1) {
+        return { "stopId" => "200405060", "dir" => "Arlon", "linePrefix" => "RB",
+                 "isTram" => false, "arrowRight" => true,
+                 "date" => dateToday, "time" => timeCurrent,
+                 "title" => "L.Gare -> Bertrange" };
+    }
+    if (page == 2) {
         return { "stopId" => "200405051", "dir" => "Gasperich",
                  "isTram" => true, "arrowRight" => false,
                  "date" => dateToday, "time" => timeCurrent,
                  "title" => "Pl.Metz -> Scillas" };
     }
-    if (page == 2) {
+    if (page == 3) {
         return { "stopId" => "200304021", "dir" => "Findel",
                  "isTram" => true, "arrowRight" => true,
                  "date" => dateToday, "time" => timeCurrent,
                  "title" => "Scillas -> Pl.Metz" };
     }
-    return { "stopId" => "200405060", "dir" => "All",
-             "isTram" => false, "arrowRight" => true,
+    // Page 4 — never the default, manually navigated to
+    return { "stopId" => "200405051", "dir" => "Bonnevoie",
+             "isTram" => true, "arrowRight" => false,
              "date" => dateToday, "time" => timeCurrent,
-             "title" => "L.Gare -> Bertrange" };
+             "title" => "Pl.Metz -> Lux Gare" };
 }
 
 class tramfaceApp extends Application.AppBase {
@@ -131,9 +140,10 @@ class tramfaceApp extends Application.AppBase {
             return;
         }
 
-        var slot   = getSlotDef(TramData.currentPage);
-        var dirFlt = slot.get("dir") as Lang.String;
-        var deps   = parseDeps((svcResL as Lang.Array)[0] as Lang.Dictionary, dirFlt);
+        var slot     = getSlotDef(TramData.currentPage);
+        var dirFlt   = slot.get("dir") as Lang.String;
+        var linePfx  = slot.get("linePrefix") as Lang.String?;
+        var deps     = parseDeps((svcResL as Lang.Array)[0] as Lang.Dictionary, dirFlt, linePfx);
 
         TramData.d1Line = null; TramData.d1Time = null; TramData.d1Dir = null; TramData.d1Delay = null;
         TramData.d2Line = null; TramData.d2Time = null; TramData.d2Dir = null; TramData.d2Delay = null;
@@ -158,6 +168,18 @@ class tramfaceApp extends Application.AppBase {
         var clk = System.getClockTime();
         TramData.updatedAt = Lang.format("$1$:$2$", [clk.hour, clk.min.format("%02d")]);
         TramData.hasData   = true;
+
+        // Vibrate once if this was the default-page fetch and any departure is delayed
+        if (TramData.vibrateOnDelays && TramData.currentPage == TramData.defaultPage) {
+            TramData.vibrateOnDelays = false;
+            var delayed = (TramData.d1Delay != null && (TramData.d1Delay as Lang.Number) > 0)
+                       || (TramData.d2Delay != null && (TramData.d2Delay as Lang.Number) > 0)
+                       || (TramData.d3Delay != null && (TramData.d3Delay as Lang.Number) > 0);
+            if (delayed && (Attention has :vibrate)) {
+                Attention.vibrate([new Attention.VibeProfile(100, 300)]);
+            }
+        }
+
         WatchUi.requestUpdate();
     }
 
@@ -188,7 +210,8 @@ class tramfaceApp extends Application.AppBase {
         return diff;
     }
 
-    function parseDeps(svcRes as Lang.Dictionary, dirFilter as Lang.String) as Lang.Array {
+
+    function parseDeps(svcRes as Lang.Dictionary, dirFilter as Lang.String, linePrefix as Lang.String?) as Lang.Array {
         var result = [] as Lang.Array;
         if (svcRes == null) { return result; }
         var inner = svcRes.get("res");
@@ -224,6 +247,8 @@ class tramfaceApp extends Application.AppBase {
                 var pName = ((prodL as Lang.Array)[prodX as Lang.Number] as Lang.Dictionary).get("name");
                 if (pName != null) { lineName = shortName(pName as Lang.String); }
             }
+
+            if (linePrefix != null && (lineName as Lang.String).find(linePrefix as Lang.String) != 0) { continue; }
 
             result.add({
                 "line"  => lineName,
