@@ -48,31 +48,31 @@ function getSlotDef(page as Lang.Number) as Lang.Dictionary {
         return { "stopId" => "200101024", "dir" => "Luxembourg",
                  "isTram" => false, "arrowRight" => false,
                  "date" => dateMorning, "time" => "064000",
-                 "title" => "Bertrange -> L.Gare" };
+                 "title" => "Bertrange > L.Gare" };
     }
     if (page == 1) {
-        return { "stopId" => "200405060", "dir" => "Arlon", "linePrefix" => "RB",
+        return { "stopId" => "200405060", "dir" => "Arlon", "linePrefix" => "RB", "maxJny" => 25,
                  "isTram" => false, "arrowRight" => true,
                  "date" => dateToday, "time" => timeCurrent,
-                 "title" => "L.Gare -> Bertrange" };
+                 "title" => "L.Gare > Bertrange" };
     }
     if (page == 2) {
         return { "stopId" => "200405051", "dir" => "Gasperich",
                  "isTram" => true, "arrowRight" => false,
                  "date" => dateToday, "time" => timeCurrent,
-                 "title" => "Pl.Metz -> Scillas" };
+                 "title" => "Pl.Metz > Scillas" };
     }
     if (page == 3) {
         return { "stopId" => "200304021", "dir" => "Findel",
                  "isTram" => true, "arrowRight" => true,
                  "date" => dateToday, "time" => timeCurrent,
-                 "title" => "Scillas -> Pl.Metz" };
+                 "title" => "Scillas > Pl.Metz" };
     }
     // Page 4 — never the default, manually navigated to
     return { "stopId" => "200405051", "dir" => "Bonnevoie",
              "isTram" => true, "arrowRight" => false,
              "date" => dateToday, "time" => timeCurrent,
-             "title" => "Pl.Metz -> Lux Gare" };
+             "title" => "Pl.Metz > Lux Gare" };
 }
 
 class tramfaceApp extends Application.AppBase {
@@ -106,7 +106,7 @@ class tramfaceApp extends Application.AppBase {
                 "meth" => "StationBoard",
                 "req"  => {
                     "stbLoc" => {"type" => "S", "extId" => slot.get("stopId")},
-                    "maxJny" => 12,
+                    "maxJny" => (slot.get("maxJny") != null ? slot.get("maxJny") : 12),
                     "date"   => slot.get("date"),
                     "time"   => slot.get("time")
                 }
