@@ -70,7 +70,8 @@ function getSlotDef(page as Lang.Number) as Lang.Dictionary {
                  "title" => "Scillas > Pl.Metz" };
     }
     // Page 4 — never the default, manually navigated to
-    return { "stopId" => "200405051", "dir" => "Bonnevoie",
+    // No dir filter: all departures from this platform are southbound and pass through Lux Gare
+    return { "stopId" => "200405051",
              "isTram" => true, "arrowRight" => false,
              "date" => dateToday, "time" => timeCurrent,
              "title" => "Pl.Metz > Lux Gare" };
