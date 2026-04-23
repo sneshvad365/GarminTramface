@@ -51,7 +51,7 @@ function getSlotDef(page as Lang.Number) as Lang.Dictionary {
                  "title" => "Bertrange > L.Gare" };
     }
     if (page == 1) {
-        return { "stopId" => "200405060", "dir" => "Arlon", "linePrefix" => "RB", "maxJny" => 25,
+        return { "stopId" => "200405060", "dir" => "Arlon", "lineFilter" => "RB",
                  "isTram" => false, "arrowRight" => true,
                  "date" => dateToday, "time" => timeCurrent,
                  "title" => "L.Gare > Bertrange" };
@@ -100,17 +100,20 @@ class tramfaceApp extends Application.AppBase {
         TramData.hasData    = false;
         WatchUi.requestUpdate();
 
+        var lineFilter = slot.get("lineFilter") as Lang.String?;
+        var req = {
+            "stbLoc" => {"type" => "S", "extId" => slot.get("stopId")},
+            "maxJny" => 12,
+            "date"   => slot.get("date"),
+            "time"   => slot.get("time")
+        } as Lang.Dictionary;
+        if (lineFilter != null) {
+            req.put("jnyFltrL", [{"type" => "LINE", "mode" => "INC", "value" => lineFilter}]);
+        }
+
         var body = {
             "lang"    => "en",
-            "svcReqL" => [{
-                "meth" => "StationBoard",
-                "req"  => {
-                    "stbLoc" => {"type" => "S", "extId" => slot.get("stopId")},
-                    "maxJny" => (slot.get("maxJny") != null ? slot.get("maxJny") : 12),
-                    "date"   => slot.get("date"),
-                    "time"   => slot.get("time")
-                }
-            }],
+            "svcReqL" => [{"meth" => "StationBoard", "req" => req}],
             "client"  => {"id" => "MMILUX", "type" => "IPH", "name" => "mobiliteit.iOS", "v" => ""},
             "ver"     => "1.56",
             "auth"    => {"type" => "AID", "aid" => "SkC81GuwuzL4e0"}
@@ -140,10 +143,9 @@ class tramfaceApp extends Application.AppBase {
             return;
         }
 
-        var slot     = getSlotDef(TramData.currentPage);
-        var dirFlt   = slot.get("dir") as Lang.String;
-        var linePfx  = slot.get("linePrefix") as Lang.String?;
-        var deps     = parseDeps((svcResL as Lang.Array)[0] as Lang.Dictionary, dirFlt, linePfx);
+        var slot   = getSlotDef(TramData.currentPage);
+        var dirFlt = slot.get("dir") as Lang.String;
+        var deps   = parseDeps((svcResL as Lang.Array)[0] as Lang.Dictionary, dirFlt);
 
         TramData.d1Line = null; TramData.d1Time = null; TramData.d1Dir = null; TramData.d1Delay = null;
         TramData.d2Line = null; TramData.d2Time = null; TramData.d2Dir = null; TramData.d2Delay = null;
@@ -211,7 +213,7 @@ class tramfaceApp extends Application.AppBase {
     }
 
 
-    function parseDeps(svcRes as Lang.Dictionary, dirFilter as Lang.String, linePrefix as Lang.String?) as Lang.Array {
+    function parseDeps(svcRes as Lang.Dictionary, dirFilter as Lang.String) as Lang.Array {
         var result = [] as Lang.Array;
         if (svcRes == null) { return result; }
         var inner = svcRes.get("res");
@@ -247,8 +249,6 @@ class tramfaceApp extends Application.AppBase {
                 var pName = ((prodL as Lang.Array)[prodX as Lang.Number] as Lang.Dictionary).get("name");
                 if (pName != null) { lineName = shortName(pName as Lang.String); }
             }
-
-            if (linePrefix != null && (lineName as Lang.String).find(linePrefix as Lang.String) != 0) { continue; }
 
             result.add({
                 "line"  => lineName,
