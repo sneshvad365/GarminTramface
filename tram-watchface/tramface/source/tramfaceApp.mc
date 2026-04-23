@@ -101,20 +101,19 @@ class tramfaceApp extends Application.AppBase {
         TramData.hasData    = false;
         WatchUi.requestUpdate();
 
+        var destId = slot.get("destId") as Lang.String?;
         var params = {
             "accessId"    => REST_KEY,
             "extId"       => slot.get("stopId"),
             "date"        => slot.get("date"),
             "time"        => slot.get("time"),
             "format"      => "json",
-            "maxJourneys" => 20,
-            "duration"    => 120
+            "maxJourneys" => (destId != null ? 5 : 10),
+            "duration"    => (destId != null ? 120 : 45)
         } as Lang.Dictionary;
 
-        var destId = slot.get("destId") as Lang.String?;
         if (destId != null) {
             params.put("direction", destId);
-            params.put("maxJourneys", 5);
         }
 
         Communications.makeWebRequest(
