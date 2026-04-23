@@ -7,13 +7,12 @@ import Toybox.Time;
 import Toybox.Time.Gregorian;
 import Toybox.WatchUi;
 
-const GATE_URL = "https://cdt.hafas.de/gate";
 const REST_URL = "https://cdt.hafas.de/opendata/apiserver/departureBoard";
 const REST_KEY = "041ad985-318b-44c4-a6d0-787b115a5ff8";
 
 // Pages (fixed order):
 //   0 — Bertrange Gare  → Gare Centrale   (shows first trains after 06:40)
-//   1 — Lux Gare        → Bertrange       (REST API, direction filter)
+//   1 — Lux Gare        → Bertrange       (direction filter by stop ID)
 //   2 — Place de Metz   → Scillas         (toward Gasperich)
 //   3 — Scillas         → Place de Metz   (toward Findel / city)
 //   4 — Place de Metz   → Lux Gare        (never default)
@@ -27,14 +26,9 @@ function getPageForTime() as Lang.Number {
 }
 
 function getSlotDef(page as Lang.Number) as Lang.Dictionary {
-    var now  = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
-    var clk  = System.getClockTime();
+    var now = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
+    var clk = System.getClockTime();
     var dateToday = Lang.format("$1$-$2$-$3$", [
-        now.year.toString(),
-        (now.month as Lang.Number).format("%02d"),
-        (now.day   as Lang.Number).format("%02d")
-    ]);
-    var dateTodayGate = Lang.format("$1$$2$$3$", [
         now.year.toString(),
         (now.month as Lang.Number).format("%02d"),
         (now.day   as Lang.Number).format("%02d")
@@ -42,26 +36,23 @@ function getSlotDef(page as Lang.Number) as Lang.Dictionary {
     var timeCurrent = Lang.format("$1$:$2$", [
         clk.hour.format("%02d"), clk.min.format("%02d")
     ]);
-    var timeCurrentGate = Lang.format("$1$$2$$3$", [
-        clk.hour.format("%02d"), clk.min.format("%02d"), clk.sec.format("%02d")
-    ]);
 
     if (page == 0) {
-        var useNextDay  = (clk.hour >= 20);
-        var moment      = useNextDay ? Time.now().add(new Time.Duration(86400)) : Time.now();
-        var dayInfo     = Gregorian.info(moment, Time.FORMAT_SHORT);
-        var dateMorning = Lang.format("$1$$2$$3$", [
+        var useNextDay = (clk.hour >= 20);
+        var moment     = useNextDay ? Time.now().add(new Time.Duration(86400)) : Time.now();
+        var dayInfo    = Gregorian.info(moment, Time.FORMAT_SHORT);
+        var dateMorning = Lang.format("$1$-$2$-$3$", [
             dayInfo.year.toString(),
             (dayInfo.month as Lang.Number).format("%02d"),
             (dayInfo.day   as Lang.Number).format("%02d")
         ]);
         return { "stopId" => "200101024", "dir" => "Luxembourg",
                  "isTram" => false, "arrowRight" => false,
-                 "date" => dateMorning, "time" => "064000",
+                 "date" => dateMorning, "time" => "06:40",
                  "title" => "Bertrange > L.Gare" };
     }
     if (page == 1) {
-        return { "stopId" => "200405060", "destId" => "200101024", "method" => "REST",
+        return { "stopId" => "200405060", "destId" => "200101024",
                  "isTram" => false, "arrowRight" => true,
                  "date" => dateToday, "time" => timeCurrent,
                  "title" => "L.Gare > Bertrange" };
@@ -69,19 +60,19 @@ function getSlotDef(page as Lang.Number) as Lang.Dictionary {
     if (page == 2) {
         return { "stopId" => "200405051", "dir" => "Gasperich",
                  "isTram" => true, "arrowRight" => false,
-                 "date" => dateTodayGate, "time" => timeCurrentGate,
+                 "date" => dateToday, "time" => timeCurrent,
                  "title" => "Pl.Metz > Scillas" };
     }
     if (page == 3) {
         return { "stopId" => "200304021", "dir" => "Findel",
                  "isTram" => true, "arrowRight" => true,
-                 "date" => dateTodayGate, "time" => timeCurrentGate,
+                 "date" => dateToday, "time" => timeCurrent,
                  "title" => "Scillas > Pl.Metz" };
     }
     // Page 4 — never the default, manually navigated to
     return { "stopId" => "200405051", "dir" => "Bonnevoie",
              "isTram" => true, "arrowRight" => false,
-             "date" => dateTodayGate, "time" => timeCurrentGate,
+             "date" => dateToday, "time" => timeCurrent,
              "title" => "Pl.Metz > Lux Gare" };
 }
 
@@ -110,50 +101,32 @@ class tramfaceApp extends Application.AppBase {
         TramData.hasData    = false;
         WatchUi.requestUpdate();
 
-        var fetchMethod = slot.get("method") as Lang.String?;
-        if (fetchMethod != null && (fetchMethod as Lang.String).equals("REST")) {
-            var params = {
-                "accessId"    => REST_KEY,
-                "extId"       => slot.get("stopId"),
-                "direction"   => slot.get("destId"),
-                "date"        => slot.get("date"),
-                "time"        => slot.get("time"),
-                "format"      => "json",
-                "maxJourneys" => 5,
-                "duration"    => 120
-            };
-            Communications.makeWebRequest(
-                REST_URL,
-                params,
-                { :method      => Communications.HTTP_REQUEST_METHOD_GET,
-                  :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON },
-                method(:onResponseREST)
-            );
-        } else {
-            var body = {
-                "lang"    => "en",
-                "svcReqL" => [{"meth" => "StationBoard", "req" => {
-                    "stbLoc" => {"type" => "S", "extId" => slot.get("stopId")},
-                    "maxJny" => 12,
-                    "date"   => slot.get("date"),
-                    "time"   => slot.get("time")
-                }}],
-                "client"  => {"id" => "MMILUX", "type" => "IPH", "name" => "mobiliteit.iOS", "v" => ""},
-                "ver"     => "1.56",
-                "auth"    => {"type" => "AID", "aid" => "SkC81GuwuzL4e0"}
-            };
-            Communications.makeWebRequest(
-                GATE_URL,
-                body,
-                { :method      => Communications.HTTP_REQUEST_METHOD_POST,
-                  :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON,
-                  :headers      => {"Content-Type" => "application/json"} },
-                method(:onResponse)
-            );
+        var params = {
+            "accessId"    => REST_KEY,
+            "extId"       => slot.get("stopId"),
+            "date"        => slot.get("date"),
+            "time"        => slot.get("time"),
+            "format"      => "json",
+            "maxJourneys" => 20,
+            "duration"    => 120
+        } as Lang.Dictionary;
+
+        var destId = slot.get("destId") as Lang.String?;
+        if (destId != null) {
+            params.put("direction", destId);
+            params.put("maxJourneys", 5);
         }
+
+        Communications.makeWebRequest(
+            REST_URL,
+            params,
+            { :method      => Communications.HTTP_REQUEST_METHOD_GET,
+              :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON },
+            method(:onResponse)
+        );
     }
 
-    function onResponseREST(responseCode as Lang.Number, data as Lang.Dictionary?) as Void {
+    function onResponse(responseCode as Lang.Number, data as Lang.Dictionary?) as Void {
         if (responseCode != 200 || data == null) {
             TramData.updatedAt = "err " + responseCode.toString();
             WatchUi.requestUpdate();
@@ -166,11 +139,14 @@ class tramfaceApp extends Application.AppBase {
             return;
         }
 
+        var slot   = getSlotDef(TramData.currentPage);
+        var dirFlt = slot.get("dir") as Lang.String?;
+        var deps   = parseDeps(depArr as Lang.Array, dirFlt);
+
         TramData.d1Line = null; TramData.d1Time = null; TramData.d1Dir = null; TramData.d1Delay = null;
         TramData.d2Line = null; TramData.d2Time = null; TramData.d2Dir = null; TramData.d2Delay = null;
         TramData.d3Line = null; TramData.d3Time = null; TramData.d3Dir = null; TramData.d3Delay = null;
 
-        var deps = parseDepsREST(depArr as Lang.Array);
         if (deps.size() > 0) {
             var d = deps[0] as Lang.Dictionary;
             TramData.d1Line = d.get("line"); TramData.d1Time = d.get("time");
@@ -184,50 +160,6 @@ class tramfaceApp extends Application.AppBase {
         if (deps.size() > 2) {
             var d = deps[2] as Lang.Dictionary;
             TramData.d3Line = d.get("line"); TramData.d3Time = d.get("time");
-            TramData.d3Dir  = d.get("dir");  TramData.d3Delay = d.get("delay");
-        }
-
-        var clk = System.getClockTime();
-        TramData.updatedAt = Lang.format("$1$:$2$", [clk.hour, clk.min.format("%02d")]);
-        TramData.hasData   = true;
-        WatchUi.requestUpdate();
-    }
-
-    function onResponse(responseCode as Lang.Number, data as Lang.Dictionary?) as Void {
-        if (responseCode != 200 || data == null) {
-            TramData.updatedAt = "err " + responseCode.toString();
-            WatchUi.requestUpdate();
-            return;
-        }
-        var svcResL = (data as Lang.Dictionary).get("svcResL");
-        if (svcResL == null || !(svcResL instanceof Lang.Array) || (svcResL as Lang.Array).size() == 0) {
-            var e = (data as Lang.Dictionary).get("err");
-            TramData.updatedAt = "err:" + (e != null ? e.toString() : "nodata");
-            WatchUi.requestUpdate();
-            return;
-        }
-
-        var slot   = getSlotDef(TramData.currentPage);
-        var dirFlt = slot.get("dir") as Lang.String;
-        var deps   = parseDeps((svcResL as Lang.Array)[0] as Lang.Dictionary, dirFlt);
-
-        TramData.d1Line = null; TramData.d1Time = null; TramData.d1Dir = null; TramData.d1Delay = null;
-        TramData.d2Line = null; TramData.d2Time = null; TramData.d2Dir = null; TramData.d2Delay = null;
-        TramData.d3Line = null; TramData.d3Time = null; TramData.d3Dir = null; TramData.d3Delay = null;
-
-        if (deps.size() > 0) {
-            var d = deps[0] as Lang.Dictionary;
-            TramData.d1Line = d.get("line"); TramData.d1Time  = d.get("time");
-            TramData.d1Dir  = d.get("dir");  TramData.d1Delay = d.get("delay");
-        }
-        if (deps.size() > 1) {
-            var d = deps[1] as Lang.Dictionary;
-            TramData.d2Line = d.get("line"); TramData.d2Time  = d.get("time");
-            TramData.d2Dir  = d.get("dir");  TramData.d2Delay = d.get("delay");
-        }
-        if (deps.size() > 2) {
-            var d = deps[2] as Lang.Dictionary;
-            TramData.d3Line = d.get("line"); TramData.d3Time  = d.get("time");
             TramData.d3Dir  = d.get("dir");  TramData.d3Delay = d.get("delay");
         }
 
@@ -249,10 +181,6 @@ class tramfaceApp extends Application.AppBase {
         WatchUi.requestUpdate();
     }
 
-    function formatTime(raw as Lang.String) as Lang.String {
-        return raw.substring(0, 2) + ":" + raw.substring(2, 4);
-    }
-
     function shortName(name as Lang.String?) as Lang.String {
         if (name == null) { return "?"; }
         var idx = name.find(" ");
@@ -265,94 +193,53 @@ class tramfaceApp extends Application.AppBase {
         return prefix;
     }
 
-    function timeDiffMins(actual as Lang.String, scheduled as Lang.String) as Lang.Number {
-        var ah = actual.substring(0, 2).toNumber();
-        var am = actual.substring(2, 4).toNumber();
-        var sh = scheduled.substring(0, 2).toNumber();
-        var sm = scheduled.substring(2, 4).toNumber();
+    function timeDiffMins(actualHHMM as Lang.String, schedHHMM as Lang.String) as Lang.Number {
+        var ah = actualHHMM.substring(0, 2).toNumber();
+        var am = actualHHMM.substring(2, 4).toNumber();
+        var sh = schedHHMM.substring(0, 2).toNumber();
+        var sm = schedHHMM.substring(2, 4).toNumber();
         var diff = (ah * 60 + am) - (sh * 60 + sm);
         if (diff < -60) { diff += 1440; }
         if (diff < 0)   { diff = 0; }
         return diff;
     }
 
-    function parseDepsREST(depArr as Lang.Array) as Lang.Array {
+    function parseDeps(depArr as Lang.Array, dirFilter as Lang.String?) as Lang.Array {
         var result = [] as Lang.Array;
         for (var i = 0; i < depArr.size() && result.size() < 3; i++) {
             var dep = depArr[i] as Lang.Dictionary;
+
+            var direction = dep.get("direction") as Lang.String?;
+            if (direction == null) { direction = ""; }
+            if (dirFilter != null && (direction as Lang.String).find(dirFilter) == null) { continue; }
+
             var sched = dep.get("time") as Lang.String?;
             if (sched == null) { continue; }
-            // time format is "HH:MM:SS" — trim to "HH:MM"
-            var timeStr = (sched as Lang.String).substring(0, 5);
-            var rt = dep.get("rtTime") as Lang.String?;
+            // REST time format is "HH:MM:SS"
+            var schedHHMM = (sched as Lang.String).substring(0, 2) + (sched as Lang.String).substring(3, 5);
+            var timeStr   = (sched as Lang.String).substring(0, 5);
+
             var delay = 0;
-            if (rt != null && !(rt as Lang.String).equals("")) {
-                delay = timeDiffMins(
-                    (rt as Lang.String).substring(0, 2) + (rt as Lang.String).substring(3, 5),
-                    (sched as Lang.String).substring(0, 2) + (sched as Lang.String).substring(3, 5)
-                );
+            var rt = dep.get("rtTime") as Lang.String?;
+            if (rt != null && (rt as Lang.String).length() >= 5) {
+                var rtHHMM = (rt as Lang.String).substring(0, 2) + (rt as Lang.String).substring(3, 5);
+                delay   = timeDiffMins(rtHHMM, schedHHMM);
                 timeStr = (rt as Lang.String).substring(0, 5);
             }
+
             var prod = dep.get("ProductAtStop") as Lang.Dictionary?;
-            var lineName = "RB";
+            var lineName = "?";
             if (prod != null) {
                 var pName = (prod as Lang.Dictionary).get("name") as Lang.String?;
                 if (pName != null) { lineName = shortName(pName); }
             }
+
             result.add({
                 "line"  => lineName,
                 "time"  => timeStr,
-                "dir"   => dep.get("direction"),
+                "dir"   => direction,
                 "delay" => delay
             });
-        }
-        return result;
-    }
-
-    function parseDeps(svcRes as Lang.Dictionary, dirFilter as Lang.String) as Lang.Array {
-        var result = [] as Lang.Array;
-        if (svcRes == null) { return result; }
-        var inner = svcRes.get("res");
-        if (inner == null) { return result; }
-        var jnyL = (inner as Lang.Dictionary).get("jnyL");
-        if (jnyL == null || !(jnyL instanceof Lang.Array)) { return result; }
-        var common = (inner as Lang.Dictionary).get("common");
-        var prodL  = (common != null) ? (common as Lang.Dictionary).get("prodL") : null;
-        if (prodL == null) { prodL = []; }
-
-        for (var i = 0; i < (jnyL as Lang.Array).size(); i++) {
-            var jny  = (jnyL as Lang.Array)[i] as Lang.Dictionary;
-            var stop = jny.get("stbStop") as Lang.Dictionary;
-            if (stop == null) { continue; }
-            var dir = jny.get("dirTxt");
-            if (dir == null) { dir = ""; }
-            if (!dirFilter.equals("All") && (dir as Lang.String).find(dirFilter) == null) { continue; }
-
-            var rawActual = stop.get("dTimeR");
-            if (rawActual == null) { rawActual = stop.get("dTimeS"); }
-            if (rawActual == null) { continue; }
-            var rawSched = stop.get("dTimeS");
-
-            var delay = 0;
-            if (rawSched != null) {
-                delay = timeDiffMins(rawActual as Lang.String, rawSched as Lang.String);
-            }
-
-            var lineName = "?";
-            var prodX = jny.get("prodX");
-            if (prodX != null && (prodL as Lang.Array).size() > 0 &&
-                (prodX as Lang.Number) < (prodL as Lang.Array).size()) {
-                var pName = ((prodL as Lang.Array)[prodX as Lang.Number] as Lang.Dictionary).get("name");
-                if (pName != null) { lineName = shortName(pName as Lang.String); }
-            }
-
-            result.add({
-                "line"  => lineName,
-                "time"  => formatTime(rawActual as Lang.String),
-                "dir"   => dir,
-                "delay" => delay
-            });
-            if (result.size() >= 3) { break; }
         }
         return result;
     }
