@@ -1,5 +1,5 @@
 command: "date +%H:%M"
-refreshFrequency: 600000
+refreshFrequency: 300000
 
 style: """
   position: fixed
