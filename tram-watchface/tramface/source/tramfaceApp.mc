@@ -70,8 +70,8 @@ function getSlotDef(page as Lang.Number) as Lang.Dictionary {
                  "title" => "Scillas > Pl.Metz" };
     }
     // Page 4 — never the default, manually navigated to
-    // No dir filter: all departures from this platform are southbound and pass through Lux Gare
-    return { "stopId" => "200405051",
+    // Both Gasperich and Bonnevoie trams pass through Lux Gare; Kirchberg/Findel do not
+    return { "stopId" => "200405051", "dir" => "Gasperich", "dir2" => "Bonnevoie",
              "isTram" => true, "arrowRight" => false,
              "date" => dateToday, "time" => timeCurrent,
              "title" => "Pl.Metz > Lux Gare" };
@@ -139,9 +139,10 @@ class tramfaceApp extends Application.AppBase {
             return;
         }
 
-        var slot   = getSlotDef(TramData.currentPage);
-        var dirFlt = slot.get("dir") as Lang.String?;
-        var deps   = parseDeps(depArr as Lang.Array, dirFlt);
+        var slot    = getSlotDef(TramData.currentPage);
+        var dirFlt  = slot.get("dir")  as Lang.String?;
+        var dirFlt2 = slot.get("dir2") as Lang.String?;
+        var deps    = parseDeps(depArr as Lang.Array, dirFlt, dirFlt2);
 
         TramData.d1Line = null; TramData.d1Time = null; TramData.d1Dir = null; TramData.d1Delay = null;
         TramData.d2Line = null; TramData.d2Time = null; TramData.d2Dir = null; TramData.d2Delay = null;
@@ -204,14 +205,19 @@ class tramfaceApp extends Application.AppBase {
         return diff;
     }
 
-    function parseDeps(depArr as Lang.Array, dirFilter as Lang.String?) as Lang.Array {
+    function parseDeps(depArr as Lang.Array, dirFilter as Lang.String?, dirFilter2 as Lang.String?) as Lang.Array {
         var result = [] as Lang.Array;
         for (var i = 0; i < depArr.size() && result.size() < 3; i++) {
             var dep = depArr[i] as Lang.Dictionary;
 
             var direction = dep.get("direction") as Lang.String?;
             if (direction == null) { direction = ""; }
-            if (dirFilter != null && (direction as Lang.String).find(dirFilter) == null) { continue; }
+            // Skip if neither filter matches (keep if either matches)
+            if (dirFilter != null) {
+                var match1 = (direction as Lang.String).find(dirFilter) != null;
+                var match2 = dirFilter2 != null && (direction as Lang.String).find(dirFilter2) != null;
+                if (!match1 && !match2) { continue; }
+            }
 
             var sched = dep.get("time") as Lang.String?;
             if (sched == null) { continue; }
