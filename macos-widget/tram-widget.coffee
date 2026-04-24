@@ -12,7 +12,7 @@ render: (output) -> """
     <div style="display:flex;gap:10px">
       #{("""
         <div id="card-#{i}" style="background:#111116;border:1px solid #1e1e28;border-radius:12px;padding:11px 12px 9px;width:200px;box-shadow:0 4px 24px rgba(0,0,0,0.5);color:#e8e8f0;font-size:11px;box-sizing:border-box">
-          <div style="color:#55556a">fetching...</div>
+          <div style="color:#9090a8">fetching...</div>
         </div>
       """ for i in [0..4]).join('')}
     </div>
@@ -88,12 +88,13 @@ afterRender: (domEl) ->
       delayed    = dep.delay > 0
       timeColor  = if delayed then "#F59E0B" else "#e8e8f0"
       delayBadge = if delayed then "<span style='color:#EF4444;font-size:10px;margin-left:2px'>+#{dep.delay}m</span>" else ""
-      dirText    = if dep.dir.length > 20 then dep.dir[0...20] + "\u2026" else dep.dir
-      "<div style='display:flex;align-items:center;gap:5px;margin-bottom:5px'><span style='background:#{accent};color:#000;font-family:monospace;font-size:11px;font-weight:700;padding:1px 5px;border-radius:4px;min-width:26px;text-align:center;flex-shrink:0'>#{dep.line}</span><span style='font-family:monospace;font-size:14px;color:#{timeColor};flex-shrink:0'>#{dep.time}</span>#{delayBadge}<span style='font-size:10px;color:#55556a;overflow:hidden;white-space:nowrap;text-overflow:ellipsis'>#{dirText}</span></div>"
+      dirText    = dep.dir.replace(/Luxembourg/g, "Lux")
+      dirText    = if dirText.length > 20 then dirText[0...20] + "\u2026" else dirText
+      "<div style='display:flex;align-items:center;gap:5px;margin-bottom:5px'><span style='background:#{accent};color:#000;font-family:monospace;font-size:11px;font-weight:700;padding:1px 5px;border-radius:4px;min-width:26px;text-align:center;flex-shrink:0'>#{dep.line}</span><span style='font-family:monospace;font-size:14px;color:#{timeColor};flex-shrink:0'>#{dep.time}</span>#{delayBadge}<span style='font-size:10px;color:#9090a8;overflow:hidden;white-space:nowrap;text-overflow:ellipsis'>#{dirText}</span></div>"
     ).join("")
 
-    noData = if deps.length is 0 then "<div style='color:#55556a;font-size:11px'>no departures</div>" else ""
-    upd    = if updatedAt then "<div style='color:#55556a;font-family:monospace;font-size:9px;margin-top:3px'>upd #{updatedAt}</div>" else ""
+    noData = if deps.length is 0 then "<div style='color:#9090a8;font-size:11px'>no departures</div>" else ""
+    upd    = if updatedAt then "<div style='color:#9090a8;font-family:monospace;font-size:9px;margin-top:3px'>upd #{updatedAt}</div>" else ""
 
     el.innerHTML = "<div style='font-size:11px;font-weight:600;color:#{accent};margin-bottom:6px'>#{route.title}</div><div style='height:1px;background:#1e1e28;margin-bottom:7px'></div>#{rows}#{noData}<div style='height:1px;background:#1e1e28;margin:5px 0 4px'></div>#{upd}"
 

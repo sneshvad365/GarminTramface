@@ -10,7 +10,7 @@ class tramfaceView extends WatchUi.View {
 
     private const BG    = 0x000000;
     private const FG    = 0xFFFFFF;
-    private const MUTED = 0x888888;
+    private const MUTED = 0xAAAAAA;
     private const TRAM  = 0xF97316;
     private const TRAIN = 0x378ADD;
     private const AMB   = 0xF59E0B;
@@ -89,6 +89,10 @@ class tramfaceView extends WatchUi.View {
         // Direction text
         if (dir != null && !(dir as Lang.String).equals("")) {
             var dirStr = dir as Lang.String;
+            var luxIdx = dirStr.find("Luxembourg");
+            if (luxIdx != null) {
+                dirStr = dirStr.substring(0, luxIdx) + "Lux" + dirStr.substring(luxIdx + 10, dirStr.length());
+            }
             if (dirStr.length() > 24) { dirStr = dirStr.substring(0, 24); }
             dc.setColor(MUTED, Graphics.COLOR_TRANSPARENT);
             dc.drawText(bx, yDir, Graphics.FONT_XTINY, dirStr,
